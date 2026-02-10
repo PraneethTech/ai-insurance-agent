@@ -60,6 +60,25 @@ out/
 backend/data/uploads/
 backend/data/extracted_content/
 backend/data/vectors/
+GIG/GIG/data/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# FAISS indices
+*.faiss
+metadata.json
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Test files
+test_*.py
+*_test.py
+test_import.py
 
 # Debug files
 debug_mammoth.py
@@ -67,3 +86,13 @@ debug_mammoth.py
 # Temporary files
 *.tmp
 *.temp
+
+# PDF/DOCX uploads (user data)
+*.pdf
+*.docx
+!GIG/GIG/docs/**/*.pdf
+!GIG/GIG/docs/**/*.docx
+
+# OCR cache
+*_ocr_cache.json
+
