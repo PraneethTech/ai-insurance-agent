@@ -41,8 +41,7 @@
 
 4. **Install dependencies**
    ```bash
-   uv pip install -r requirements.txt
-   uv pip install mammoth
+   uv pip install -r app/requirements.txt
    ```
 
 5. **Create `.env` file** in `backend/` directory with:
