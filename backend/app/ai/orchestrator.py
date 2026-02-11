@@ -6,8 +6,6 @@ from enum import Enum
 from typing import Dict, Any, Optional
 
 from app.ai.agents.discharge_agent import DischargeSummaryAgent
-from app.ai.agents.bill_agent import BillValidatorAgent
-from app.ai.agents.medicine_agent import MedicinePriceAgent
 from app.ai.agents.diet_agent import DietPlanningAgent
 from app.ai.agents.base import get_llm
 
@@ -33,8 +31,6 @@ class Orchestrator:
         # Initialize agents
         self.agents = {
             AgentType.DISCHARGE: DischargeSummaryAgent(vector_id),
-            AgentType.BILL: BillValidatorAgent(vector_id),
-            AgentType.MEDICINE: MedicinePriceAgent(vector_id),
             AgentType.DIET: DietPlanningAgent(vector_id),
         }
     
@@ -45,10 +41,8 @@ class Orchestrator:
         prompt = f"""You are a query router. Your job is to select the best agent to handle a user's question.
 
 Available Agents:
-1. {AgentType.BILL.value}: For questions about hospital bills, costs, insurance, overcharging, coverage, or financial disputes.
-2. {AgentType.MEDICINE.value}: For questions about medicine prices, finding cheaper alternatives, generic drugs, or pharmacy comparisons.
-3. {AgentType.DIET.value}: For questions about food, diet plans, nutrition, what to eat/avoid, or lifestyle changes.
-4. {AgentType.DISCHARGE.value}: For everything else. Questions about diagnosis, treatment, reports, follow-up, discharge summary details, or general medical questions.
+1. {AgentType.DIET.value}: For questions about food, diet plans, nutrition, what to eat/avoid, or lifestyle changes.
+2. {AgentType.DISCHARGE.value}: For everything else. Questions about diagnosis, treatment, reports, follow-up, discharge summary details, or general medical questions.
 
 User Query: "{query}"
 
@@ -67,15 +61,8 @@ Agent Name:"""
         except ValueError:
             # Fallback heuristics
             query_lower = query.lower()
-            if any(k in query_lower for k in ["bill", "cost", "price", "insurance", "charge", "rupee"]):
-                 if "medicine" in query_lower or "drug" in query_lower or "tablet" in query_lower:
-                     return AgentType.MEDICINE
-                 return AgentType.BILL
             if any(k in query_lower for k in ["diet", "food", "eat", "meal", "nutrition"]):
                 return AgentType.DIET
-            if any(k in query_lower for k in ["medicine", "drug", "tablet", "price", "cost"]) and "bill" not in query_lower:
-                return AgentType.MEDICINE
-            
             return AgentType.DISCHARGE
 
     async def process_query(self, query: str) -> Dict[str, Any]:
