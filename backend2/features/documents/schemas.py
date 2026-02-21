@@ -22,3 +22,5 @@ class DocumentOut(BaseModel):
     vector_status: str
     processing_step: Optional[str] = None
     page_count: int = 0
+    ocr_cache_path: Optional[str] = None
+    extracted_content_path: Optional[str] = None

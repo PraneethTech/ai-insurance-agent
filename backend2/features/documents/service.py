@@ -46,11 +46,20 @@ class DocumentService:
             {"$set": {"vector_status": vector_status, "processing_step": processing_step, "updated_at": datetime.utcnow()}},
         )
 
-    async def mark_completed(self, doc_id: str, page_count: int):
-        await documents_col().update_one(
-            {"doc_id": doc_id},
-            {"$set": {"vector_status": "COMPLETED", "processing_step": "Ready", "page_count": page_count, "updated_at": datetime.utcnow()}},
-        )
+    async def mark_completed(self, doc_id: str, page_count: int,
+                              ocr_cache_path: str = None, extracted_text_path: str = None):
+        update = {
+            "vector_status": "COMPLETED",
+            "processing_step": "Ready",
+            "page_count": page_count,
+            "updated_at": datetime.utcnow(),
+        }
+        if ocr_cache_path:
+            update["ocr_cache_path"] = ocr_cache_path
+        if extracted_text_path:
+            update["extracted_content_path"] = extracted_text_path
+        await documents_col().update_one({"doc_id": doc_id}, {"$set": update})
+
 
     async def mark_failed(self, doc_id: str, error: str):
         await documents_col().update_one(

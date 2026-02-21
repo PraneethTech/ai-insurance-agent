@@ -14,6 +14,8 @@ from features.documents.router import (
     list_documents,
     get_document,
     download_document,
+    content_document,
+    get_extracted_html,
 )
 from features.chat.router import router as chat_router
 
@@ -47,6 +49,9 @@ app.add_api_route("/uploads/", upload_document, methods=["POST"], tags=["Uploads
 app.add_api_route("/uploads/", list_documents, methods=["GET"], tags=["Uploads (alias)"])
 app.add_api_route("/uploads/{doc_id}", get_document, methods=["GET"], tags=["Uploads (alias)"])
 app.add_api_route("/uploads/{doc_id}/download", download_document, methods=["GET"], tags=["Uploads (alias)"])
+app.add_api_route("/uploads/{doc_id}/content", content_document, methods=["GET"], tags=["Uploads (alias)"])
+app.add_api_route("/uploads/{doc_id}/extracted/html", get_extracted_html, methods=["GET"], tags=["Uploads (alias)"])
+
 
 
 @app.get("/", tags=["Health"])
