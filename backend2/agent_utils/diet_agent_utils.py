@@ -1,4 +1,5 @@
 from typing import Dict, Any
+import json
 from pathlib import Path
 from langchain.tools import tool
 from langchain_community.vectorstores import FAISS
@@ -17,15 +18,15 @@ embeddings = embed_instance.get_embeddings()
 # ============================================================
 
 @tool
-def extract_medical_info(kb_name: str) -> Dict[str, str]:
+def extract_medical_info(kb_name: str) -> str:
     """
     Loads discharge summary FAISS vectorstore and extracts medical information.
-    
+
     Args:
         kb_name: Name of the KB
-        
+
     Returns:
-        Dictionary containing:
+        JSON string containing:
         - Diagnoses
         - Medical Conditions
         - Prescribed Medications
@@ -37,14 +38,14 @@ def extract_medical_info(kb_name: str) -> Dict[str, str]:
         kb_path = str(VECTOR_STORES_DIR / kb_name)
         
         if not Path(kb_path).exists():
-            return {
+            return json.dumps({
                 "error": f"KB '{kb_name}' not found at {kb_path}",
                 "Diagnoses": "",
                 "Medical Conditions": "",
                 "Prescribed Medications": "",
                 "Dietary Restrictions": "",
                 "Recovery Notes": ""
-            }
+            })
         
         # Load FAISS vectorstore
         kb = FAISS.load_local(
@@ -87,17 +88,17 @@ Context:
             response = llm.invoke(extraction_prompt)
             medical_info[category] = response.content.strip()
         
-        return medical_info
-    
+        return json.dumps(medical_info)
+
     except Exception as e:
-        return {
+        return json.dumps({
             "error": f"Failed to extract medical info: {str(e)}",
             "Diagnoses": "",
             "Medical Conditions": "",
             "Prescribed Medications": "",
             "Dietary Restrictions": "",
             "Recovery Notes": ""
-        }
+        })
 
 
 # ============================================================
@@ -105,10 +106,23 @@ Context:
 # ============================================================
 
 @tool
-def get_diet_recommendations(medical_info: Dict[str, str]) -> str:
+def get_diet_recommendations(
+    diagnoses: str,
+    medical_conditions: str,
+    prescribed_medications: str,
+    dietary_restrictions: str,
+    recovery_notes: str,
+) -> str:
     """
     Queries diet KB vectorstore with medical information and returns
     diet recommendations with citations.
+
+    Args:
+        diagnoses: Diagnoses field from extract_medical_info.
+        medical_conditions: Medical Conditions field from extract_medical_info.
+        prescribed_medications: Prescribed Medications field from extract_medical_info.
+        dietary_restrictions: Dietary Restrictions field from extract_medical_info.
+        recovery_notes: Recovery Notes field from extract_medical_info.
     """
 
     try:
@@ -130,11 +144,11 @@ def get_diet_recommendations(medical_info: Dict[str, str]) -> str:
         query = f"""
 Based on the following medical information, provide diet recommendations:
 
-Diagnoses: {medical_info.get('Diagnoses', 'None')}
-Medical Conditions: {medical_info.get('Medical Conditions', 'None')}
-Prescribed Medications: {medical_info.get('Prescribed Medications', 'None')}
-Dietary Restrictions: {medical_info.get('Dietary Restrictions', 'None')}
-Recovery Notes: {medical_info.get('Recovery Notes', 'None')}
+Diagnoses: {diagnoses}
+Medical Conditions: {medical_conditions}
+Prescribed Medications: {prescribed_medications}
+Dietary Restrictions: {dietary_restrictions}
+Recovery Notes: {recovery_notes}
 """
 
         # Retrieve documents manually
@@ -150,11 +164,11 @@ You are a clinical dietitian.
 Use ONLY the provided knowledge base context to answer.
 
 Medical Information:
-Diagnoses: {medical_info.get('Diagnoses', 'None')}
-Medical Conditions: {medical_info.get('Medical Conditions', 'None')}
-Prescribed Medications: {medical_info.get('Prescribed Medications', 'None')}
-Dietary Restrictions: {medical_info.get('Dietary Restrictions', 'None')}
-Recovery Notes: {medical_info.get('Recovery Notes', 'None')}
+Diagnoses: {diagnoses}
+Medical Conditions: {medical_conditions}
+Prescribed Medications: {prescribed_medications}
+Dietary Restrictions: {dietary_restrictions}
+Recovery Notes: {recovery_notes}
 
 Knowledge Base Context:
 {context}
@@ -208,11 +222,14 @@ DIET_AGENT_SYSTEM_PROMPT = """
 You are the Diet & Nutrition Agent.
 
 STRICT WORKFLOW:
-1. Call extract_medical_info with the discharge_kb name (e.g., 'discharge')
-2. Call get_diet_recommendations with the medical info dictionary
-
-Note:
-- Do not modify the dict you receive from extract_medical_info. Just pass it exactly as you received it to get_diet_recommendations.
+1. Call extract_medical_info with the kb_name argument.
+2. The tool returns a JSON string. Parse it and call get_diet_recommendations
+   with these FIVE arguments extracted from the JSON:
+   - diagnoses         ← value of "Diagnoses" key
+   - medical_conditions ← value of "Medical Conditions" key
+   - prescribed_medications ← value of "Prescribed Medications" key
+   - dietary_restrictions   ← value of "Dietary Restrictions" key
+   - recovery_notes         ← value of "Recovery Notes" key
 
 Rules:
 - Always rely on KB evidence.

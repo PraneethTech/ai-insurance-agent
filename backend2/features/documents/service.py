@@ -9,7 +9,7 @@ from database import documents_col
 class DocumentService:
 
     async def create_record(self, doc_id, user_id, filename, vector_id, file_path, description=None):
-        now = datetime.utcnow()
+        now = datetime.now()
         doc = {
             "doc_id": doc_id,
             "user_id": user_id,
@@ -43,7 +43,7 @@ class DocumentService:
     async def update_status(self, doc_id: str, vector_status: str, processing_step: str):
         await documents_col().update_one(
             {"doc_id": doc_id},
-            {"$set": {"vector_status": vector_status, "processing_step": processing_step, "updated_at": datetime.utcnow()}},
+            {"$set": {"vector_status": vector_status, "processing_step": processing_step, "updated_at": datetime.now()}},
         )
 
     async def mark_completed(self, doc_id: str, page_count: int,
@@ -52,7 +52,7 @@ class DocumentService:
             "vector_status": "COMPLETED",
             "processing_step": "Ready",
             "page_count": page_count,
-            "updated_at": datetime.utcnow(),
+            "updated_at": datetime.now(),
         }
         if ocr_cache_path:
             update["ocr_cache_path"] = ocr_cache_path
@@ -64,5 +64,5 @@ class DocumentService:
     async def mark_failed(self, doc_id: str, error: str):
         await documents_col().update_one(
             {"doc_id": doc_id},
-            {"$set": {"vector_status": "FAILED", "processing_step": f"Failed: {error}", "updated_at": datetime.utcnow()}},
+            {"$set": {"vector_status": "FAILED", "processing_step": f"Failed: {error}", "updated_at": datetime.now()}},
         )
